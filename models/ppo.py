@@ -2,10 +2,13 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-config = tf.compat.v1.ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 1.0
-config.gpu_options.allow_growth = True
-tf.compat.v1.Session(config=config)
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+# config = tf.compat.v1.ConfigProto()
+# # config.gpu_options.per_process_gpu_memory_fraction = 1.0
+# config.gpu_options.allow_growth = True
+# tf.compat.v1.Session(config=config)
 
 
 class Actor(tf.keras.layers.Layer):

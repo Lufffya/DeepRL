@@ -10,10 +10,13 @@ import tensorflow as tf
 from models.ppo import PPO
 from collections import deque
 
-config = tf.compat.v1.ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 1.0
-config.gpu_options.allow_growth = True
-tf.compat.v1.Session(config=config)
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+# config = tf.compat.v1.ConfigProto()
+# # config.gpu_options.per_process_gpu_memory_fraction = 1.0
+# config.gpu_options.allow_growth = True
+# tf.compat.v1.Session(config=config)
 
 ########## hyperparameters ##########
 GAMMA = 0.99
@@ -61,7 +64,7 @@ def preprocess_frame(frame):
     return frame
 
 
-def update(ppo, states, actions, returns, advantages, old_log_prob, timesteps):
+def update(ppo, states, actions, returns, advantages, old_log_prob):
     indexs = np.arange(states.shape[0])
     for i in range(TRAIN_K_MINIBATCH):
         np.random.shuffle(indexs)
@@ -70,10 +73,6 @@ def update(ppo, states, actions, returns, advantages, old_log_prob, timesteps):
             mbinds = indexs[start:end]
             slices = (arr[mbinds] for arr in (states, actions, returns, advantages, old_log_prob))
             pi_loss, value_loss, entropy_loss, total_loss, old_neg_log_val, neg_log_val, approx_kl, ratio = ppo.loss(*slices)
-
-            timesteps += STEPS_PER_BATCH
-
-    return timesteps
 
 
 def train():
@@ -102,8 +101,11 @@ def train():
 
             stacked_states = np.concatenate(stacked_frames, axis=2)
             pi, old_log_p, v = ppo.call(np.expand_dims(stacked_states, axis=0))
+            
             pi = pi.numpy()[0]
+
             clipped_actions = np.clip(pi, env.action_space.low, env.action_space.high)
+
             frame, reward, done, _ = env.step(clipped_actions)
             total_reward += reward
 
@@ -131,7 +133,7 @@ def train():
         advantages = compute_gae(rewards, values, last_val, dones, GAMMA, LAMBDA)
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         returns = advantages + values
-        timesteps = update(ppo, np.array(states), np.array(actions), np.array(returns), np.array(advantages), np.array(old_log_pi), timesteps)
+        update(ppo, np.array(states), np.array(actions), np.array(returns), np.array(advantages), np.array(old_log_pi))
 
         print("total_reward：{}".format(total_reward))
         if epoch != 0 and epoch % 10 == 0:
