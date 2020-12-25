@@ -1,16 +1,15 @@
-import sys,os
+import sys
+import os
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
-
-import cv2
-import gym
-import numpy as np
-import tensorflow as tf
-from models.ppo import PPO
 from collections import deque
+from models.ppo import PPO
+import tensorflow as tf
+import numpy as np
+import gym
+import cv2
 
-import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # config = tf.compat.v1.ConfigProto()
@@ -65,6 +64,7 @@ def preprocess_frame(frame):
 
 
 def update(ppo, states, actions, returns, advantages, old_log_prob):
+    loss = 0
     indexs = np.arange(states.shape[0])
     for i in range(TRAIN_K_MINIBATCH):
         np.random.shuffle(indexs)
@@ -74,8 +74,14 @@ def update(ppo, states, actions, returns, advantages, old_log_prob):
             slices = (arr[mbinds] for arr in (states, actions, returns, advantages, old_log_prob))
             pi_loss, value_loss, entropy_loss, total_loss, old_neg_log_val, neg_log_val, approx_kl, ratio = ppo.loss(*slices)
 
+            loss += total_loss.numpy()
+
+    return loss
+
 
 def train():
+    # from box2D.car_racing import CarRacing
+    # env = CarRacing()
     env = gym.make("CarRacing-v0")
     stacked_frames = deque(maxlen=4)
 
@@ -101,12 +107,12 @@ def train():
 
             stacked_states = np.concatenate(stacked_frames, axis=2)
             pi, old_log_p, v = ppo.call(np.expand_dims(stacked_states, axis=0))
-            
             pi = pi.numpy()[0]
 
             clipped_actions = np.clip(pi, env.action_space.low, env.action_space.high)
 
             frame, reward, done, _ = env.step(clipped_actions)
+
             total_reward += reward
 
             states.append(stacked_states)
@@ -133,9 +139,9 @@ def train():
         advantages = compute_gae(rewards, values, last_val, dones, GAMMA, LAMBDA)
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         returns = advantages + values
-        update(ppo, np.array(states), np.array(actions), np.array(returns), np.array(advantages), np.array(old_log_pi))
+        loss = update(ppo, np.array(states), np.array(actions), np.array(returns), np.array(advantages), np.array(old_log_pi))
 
-        print("total_reward：{}".format(total_reward))
+        print("total_loss：{}   total_reward：{}".format(loss, total_reward))
         if epoch != 0 and epoch % 10 == 0:
             ppo.save_weights("model_weights\\carRacing_for_ppo\\ppo_checkpoint")
 
