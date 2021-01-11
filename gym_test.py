@@ -5,8 +5,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-# env = gym.make("BipedalWalkerHardcore-v3")
-env = gym.make("Pendulum-v0")
+env = gym.make("MountainCarContinuous-v0")
 
 print("#####################TEST###################")
 print("observation_space shape: {}".format(env.observation_space.shape))

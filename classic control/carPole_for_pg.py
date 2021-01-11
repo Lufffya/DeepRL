@@ -3,8 +3,7 @@ import numpy as np
 import tensorflow as tf
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-np.random.seed(42)
+np.random.seed(1)
 
 
 class Agent:
@@ -18,7 +17,7 @@ class Agent:
 
     def build_Policy_Model(self):
         return tf.keras.models.Sequential([
-            tf.keras.layers.Dense(10, activation="tanh"),
+            tf.keras.layers.Dense(10, activation="relu"),
             tf.keras.layers.Dense(self.n_actions, activation="softmax")
         ])
 
@@ -48,7 +47,7 @@ class Agent:
             actions_prob = self.model(states)
 
             loss = tf.keras.losses.categorical_crossentropy(y_pred=actions_prob, y_true=tf.one_hot(actions, self.n_actions))
-            loss = discounted_rewards * loss
+            loss = tf.reduce_mean(discounted_rewards * loss)
 
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
@@ -65,17 +64,13 @@ class Agent:
         discount_rewards = discount_rewards[::-1]
 
         # # 标准化奖励
-        normalize_rewards = discount_rewards - np.mean(discount_rewards)
+        normalize_rewards = (discount_rewards - np.mean(discount_rewards)) / np.std(discount_rewards)
 
         return normalize_rewards
 
-env = gym.make('CartPole-v0')
-env.seed(42)
 
-print(env.action_space)
-print(env.observation_space)
-print(env.observation_space.high)
-print(env.observation_space.low)
+env = gym.make('CartPole-v0')
+env.seed(1)
 
 agent = Agent(n_actions=env.action_space.n,
               n_features=env.observation_space.shape[0])
