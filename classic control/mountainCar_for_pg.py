@@ -20,13 +20,8 @@ class Agent():
         self.log_std = tf.Variable(tf.zeros(n_actions, dtype=tf.float32))
 
     def build_continuous_policy_model(self):
-        # _input = tf.keras.layers.Input(shape=(self.n_features,))
-        # layer = tf.keras.layers.Dense(10, activation='relu')(_input)
-        # mu = tf.keras.layers.Dense(self.n_actions, activation='tanh')(layer)
-        # sigma = tf.keras.layers.Dense(self.n_actions, activation='softplus')(layer)
-        # return tf.keras.models.Model(inputs=[_input], outputs=[mu, sigma])
         model = tf.keras.Sequential([
-            tf.keras.layers.Dense(64, activation='relu',input_shape=(self.n_features,)),
+            tf.keras.layers.Dense(64, activation='relu', input_shape=(self.n_features,)),
             tf.keras.layers.Dense(64, activation='relu'),
             tf.keras.layers.Dense(self.n_actions)])
         return model
@@ -46,47 +41,39 @@ class Agent():
             states.append(state)
             actions.append(action)
             rewards.append(reward)
-
         self.episode_buffer = []
         return np.array(states), np.array(actions), np.array(rewards)
 
     def discount_and_norm_rewards(self, rewards):
         # 计算折减奖励
-        discount_rewards = []
-        discounted_sum = 0
-        for reward in rewards:
-            discounted_sum = discounted_sum * self.gamma + reward
-            discount_rewards.append(discounted_sum)
-        discount_rewards = discount_rewards[::-1]
-
-        return np.array(discount_rewards)
+        discounted = np.zeros((len(rewards)))
+        discount_rewards = np.power(self.gamma, np.arange(0, len(rewards), dtype=np.float32))
+        for t in range(len(rewards)):
+            discounted[t] = np.sum(rewards[t:] * discount_rewards[0: len(rewards)-t])
+        return discounted
 
     def train(self):
         states, actions, rewards = self.get_store()
-
         discounted_rewards = self.discount_and_norm_rewards(rewards)
-
         with tf.GradientTape() as tape:
-
             mu = self.model(states)
             normal_distribution = tfp.distributions.Normal(mu, tf.math.exp(self.log_std))
             log_probs = normal_distribution.log_prob(actions)
             loss = - tf.reduce_mean(log_probs * discounted_rewards)
-
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
         return loss
 
-
 env = gym.make('MountainCarContinuous-v0')
 env.seed(1)
-
 agent = Agent(n_actions=env.action_space.shape[0],
               n_features=env.observation_space.shape[0],
               max_episode_steps=env.spec.max_episode_steps)
 
-for i_episode in range(3000):
+i_episode = 0
+
+while True:
 
     observation = env.reset()
 
@@ -109,6 +96,7 @@ for i_episode in range(3000):
         time_step += 1
         observation = observation_
 
-    if i_episode != 0 and i_episode % 5 == 0:
-        agent.model.save_weights(
-            "model_weights\\mountainCar_for_pg\\pg_checkpoint")
+    if i_episode != 0 and i_episode % 10 == 0:
+        agent.model.save_weights("model_weights\\mountainCar_for_pg\\pg_checkpoint")
+
+    i_episode += 1
