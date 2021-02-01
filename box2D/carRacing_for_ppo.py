@@ -4,7 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 from collections import deque
-from models.ppo import PPO
+from algorithms.ppo import PPO
 import tensorflow as tf
 import numpy as np
 import gym
