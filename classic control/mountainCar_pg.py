@@ -16,7 +16,7 @@ class Agent():
         self.episode_buffer = []
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
         self.model = self.build_continuous_policy_model()
-        self.model.load_weights("model_weights\\mountainCar_for_pg\\pg_checkpoint")
+        self.model.load_weights("model_weights\\mountainCar_pg\\pg_checkpoint")
         self.log_std = tf.Variable(tf.zeros(n_actions, dtype=tf.float32))
 
     def build_continuous_policy_model(self):
@@ -97,6 +97,6 @@ while True:
         observation = observation_
 
     if i_episode != 0 and i_episode % 10 == 0:
-        agent.model.save_weights("model_weights\\mountainCar_for_pg\\pg_checkpoint")
+        agent.model.save_weights("model_weights\\mountainCar_pg\\pg_checkpoint")
 
     i_episode += 1

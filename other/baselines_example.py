@@ -7,7 +7,9 @@ from stable_baselines import PPO2
 # multiprocess environment
 n_cpu = 4
 env = DummyVecEnv([lambda: gym.make('CarRacing-v0') for i in range(n_cpu)])
+
 env = VecFrameStack(env, n_stack=4)
+
 model = PPO2(CnnPolicy, env, verbose=1, tensorboard_log='logs/')
 model.learn(total_timesteps=10000000)
 model.save("CarRacing_ppo")

@@ -4,7 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 from collections import deque
-from algorithms.ppo import PPO
+from algorithms.ppo_continuous_tf2 import PPO
 import tensorflow as tf
 import numpy as np
 import gym
@@ -87,7 +87,7 @@ def train():
 
     ppo = PPO(ACTION_SIZE, EPSILON, ENTROPY_REG, VALUE_COEFFICIENT,"CNN", LEARNING_RATE, MAX_GRAD_NORM)
 
-    ppo.load_weights("model_weights\\carRacing_for_ppo\\ppo_checkpoint")
+    ppo.load_weights("model_weights\\carRacing_ppo\\ppo_checkpoint")
 
     steps = 0
     total_reward = 0
@@ -143,7 +143,7 @@ def train():
 
         print("total_loss：{}   total_reward：{}".format(loss, total_reward))
         if epoch != 0 and epoch % 10 == 0:
-            ppo.save_weights("model_weights\\carRacing_for_ppo\\ppo_checkpoint")
+            ppo.save_weights("model_weights\\carRacing_ppo\\ppo_checkpoint")
 
     env.close()
 
