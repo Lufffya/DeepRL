@@ -33,7 +33,7 @@ if random_seed:
 
 memory = Memory()
 ppo = PPO(state_dim, action_dim, n_latent_var,lr, betas, gamma, K_epochs, eps_clip)
-ppo.policy_old.load_state_dict(torch.load('weights\\acrobot\\acrobot.pth'))
+ppo.policy_old.load_state_dict(torch.load('weights\\acrobot\\acrobot.pth', map_location='cpu'))
 print(lr, betas)
 
 # logging variables
@@ -73,8 +73,11 @@ while True:
         if done:
             break
 
+    # saving
+    if i_episode % 500 == 0:
+        torch.save(ppo.policy.state_dict(), 'weights\\acrobot\\acrobot.pth')
+
     # logging
     if i_episode % log_interval == 0:
-        torch.save(ppo.policy.state_dict(), 'weights\\acrobot\\acrobot.pth')
         print('Episode {} \t reward: {}'.format(i_episode, running_reward))
         running_reward = 0
