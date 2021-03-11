@@ -43,7 +43,8 @@ class ActorCritic(nn.Module):
             nn.Tanh(),
             nn.Linear(32, 1)
         )
-        self.action_var = torch.full((action_dim,), action_std*action_std).to(device)
+        self.action_var = torch.full(
+            (action_dim,), action_std*action_std).to(device)
 
     def forward(self):
         raise NotImplementedError
@@ -110,6 +111,7 @@ class PPO:
         # Normalizing the rewards:
         rewards = torch.tensor(rewards).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+        rewards = rewards.float()
 
         # convert list to tensor
         old_states = torch.squeeze(torch.stack(memory.states).to(device), 1).detach()

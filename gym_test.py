@@ -3,15 +3,15 @@ import gym
 import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-env = gym.make("Acrobot-v1")
+env = gym.make("Pendulum-v0")
 
 print("#####################TEST###################")
 print("observation_space shape: {}".format(env.observation_space.shape))
 print("observation_space low: {}".format(env.observation_space.low))
 print("observation_space high: {}".format(env.observation_space.high))
 print("action_space shape: {}".format(env.action_space.shape))
-# print("action_space low: {}".format(env.action_space.low))
-# print("action_space high: {}".format(env.action_space.high))        
+print("action_space low: {}".format(env.action_space.low))
+print("action_space high: {}".format(env.action_space.high))     
 print("reward_range: {}".format(env.reward_range))
 print("########################################")
 

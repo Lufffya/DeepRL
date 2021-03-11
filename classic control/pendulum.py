@@ -6,57 +6,63 @@ sys.path.append(BASE_DIR)
 import gym
 import torch
 import numpy as np
-from algorithms.ppo_discrete_torch import PPO, Memory
+from algorithms.ppo_continuous_torch import PPO, Memory
 
 
 ############## Hyperparameters ##############
-env_name = "Acrobot-v1"
-# creating environment
-env = gym.make(env_name)
-state_dim = env.observation_space.shape[0]
-action_dim = 3
+env_name = "Pendulum-v0"
 render = True
 log_interval = 20           # print avg reward in the interval
-n_latent_var = 64           # number of variables in hidden layer
+
 update_timestep = 512       # update policy every n timesteps
-lr = 3e-4
-betas = (0.9, 0.999)
-gamma = 0.99                # discount factor
-K_epochs = 10                # update policy for K epochs
+action_std = 0.5            # constant std for action distribution (Multivariate Normal)
+K_epochs = 10               # update policy for K epochs
 eps_clip = 0.2              # clip parameter for PPO
+gamma = 0.99                # discount factor
+
+lr = 3e-3                   # parameters for Adam optimizer
+betas = (0.9, 0.999)
+
 random_seed = 1
 #############################################
 
+# creating environment
+env = gym.make(env_name)
+state_dim = env.observation_space.shape[0]
+action_dim = env.action_space.shape[0]
+
 if random_seed:
+    print("Random Seed: {}".format(random_seed))
     torch.manual_seed(random_seed)
     env.seed(random_seed)
+    np.random.seed(random_seed)
 
 memory = Memory()
-ppo = PPO(state_dim, action_dim, n_latent_var,lr, betas, gamma, K_epochs, eps_clip)
-# ppo.policy_old.load_state_dict(torch.load('weights\\acrobot\\acrobot.pth', map_location='cpu'))
+ppo = PPO(state_dim, action_dim, action_std, lr, betas, gamma, K_epochs, eps_clip)
+ppo.policy_old.load_state_dict(torch.load('weights\\pendulum\\pendulum.pth'))
 print(lr, betas)
 
 # logging variables
+
 i_episode = 0
 total_timestep = 0
 running_reward = 0
 
 # training loop
 while True:
+    time_step = 0
     i_episode += 1
-    timestep = 0
-
     state = env.reset()
 
     while True:
-        timestep += 1
+        time_step += 1
         total_timestep += 1
 
         # Running policy_old:
-        action = ppo.policy_old.act(state, memory)
+        action = ppo.select_action(state, memory)
         state, reward, done, _ = env.step(action)
 
-        # Saving reward and is_terminal:
+        # Saving reward and is_terminals:
         memory.rewards.append(reward)
         memory.is_terminals.append(done)
 
@@ -73,12 +79,11 @@ while True:
         if done:
             break
 
-    # saving
+    # save every 500 episodes
     if i_episode % 500 == 0:
-        pass
-        # torch.save(ppo.policy.state_dict(), 'weights\\acrobot\\acrobot.pth')
+        torch.save(ppo.policy.state_dict(), 'weights\\pendulum\\pendulum.pth')
 
     # logging
     if i_episode % log_interval == 0:
-        print('Episode {} \t reward: {}'.format(i_episode, running_reward))
+        print('Episode {} \t Avg reward: {}'.format(i_episode, running_reward))
         running_reward = 0
