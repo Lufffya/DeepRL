@@ -1,11 +1,12 @@
-import gym
-import universe # register Universe environments into Gym
+import retro
 
-env = gym.make('flashgames.DuskDrive-v0') # any Universe environment ID here
-observation_n = env.reset()
 
 while True:
-  # agent which presses the Up arrow 60 times per second
-  action_n = [[('KeyEvent', 'ArrowUp', True)] for _ in observation_n]
-  observation_n, reward_n, done_n, info = env.step(action_n)
-  env.render()
+    env = retro.make(game='Airstriker-Genesis')
+    obs = env.reset()
+    while True:
+        obs, rew, done, info = env.step(env.action_space.sample())
+        env.render()
+        if done:
+            obs = env.reset()
+    env.close()
