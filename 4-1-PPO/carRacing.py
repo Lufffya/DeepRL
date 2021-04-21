@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Proximal Policy Optimization algorithm of carRacing example
+# env: http://gym.openai.com/envs/CarRacing-v0/
+
 import sys, os
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -76,7 +80,6 @@ def train():
     stacked_frames = deque(maxlen=4)
 
     ppo = PPO(ACTION_SIZE, EPSILON, ENTROPY_REG, VALUE_COEFFICIENT,"CNN", LEARNING_RATE, MAX_GRAD_NORM)
-
     ppo.load_weights("weights\\CarRacing_PPO\\ppo_checkpoint")
 
     steps = 0

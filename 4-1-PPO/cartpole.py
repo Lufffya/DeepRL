@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Proximal Policy Optimization algorithm of cartpole example
+# env: http://gym.openai.com/envs/CartPole-v1/
+
 import sys, os
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -9,10 +13,9 @@ import numpy as np
 
 ############## Hyperparameters ##############
 env_name = "CartPole-v0"
-# creating environment
 env = gym.make(env_name)
 state_dim = env.observation_space.shape[0]
-action_dim = 2
+action_dim = env.action_space.n
 n_latent_var = 16           # number of variables in hidden layer
 update_timestep = 512       # update policy every n timesteps
 lr = 3e-2
@@ -20,7 +23,7 @@ betas = (0.9, 0.999)
 gamma = 0.99                # discount factor
 K_epochs = 10               # update policy for K epochs
 eps_clip = 0.2              # clip parameter for PPO
-random_seed = 1
+random_seed = None
 #############################################
 
 if random_seed:
@@ -29,7 +32,6 @@ if random_seed:
 
 memory = Memory()
 ppo = PPO(state_dim, action_dim, n_latent_var,lr, betas, gamma, K_epochs, eps_clip)
-# ppo.policy_old.load_state_dict(torch.load('weights\\acrobot\\acrobot.pth', map_location='cpu'))
 
 # logging variables
 i_episode = 0
@@ -38,13 +40,13 @@ total_timestep = 0
 # training loop
 while True:
     i_episode += 1
-    timestep = 0
-    running_reward = 0
+    time_step = 0
+    episode_reward = 0
 
     state = env.reset()
 
     while True:
-        timestep += 1
+        time_step += 1
         total_timestep += 1
 
         env.render()
@@ -63,13 +65,9 @@ while True:
             memory.clear_memory()
             total_timestep = 0
 
-        running_reward += reward
+        episode_reward += reward
 
         if done:
             break
 
-    print('i_episode: {0} \t time_step: {1} reward: {2}'.format(i_episode, timestep, running_reward))
-
-    # saving
-    # if i_episode % 500 == 0:
-    #     torch.save(ppo.policy.state_dict(), 'weights\\acrobot\\acrobot.pth')
+    print('i_episode: {0} \t time_step: {1} \t episode_reward: {2}'.format(i_episode, time_step, episode_reward))

@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
+# Discrete Policy Gradient algorithm of cartpole example
+# env: http://gym.openai.com/envs/CartPole-v1/
+
 import gym
 import numpy as np
 import tensorflow as tf
 
 
-class Agent:
+class PG:
     def __init__(self, n_actions, n_features):
         self.n_actions = n_actions
         self.n_features = n_features
@@ -46,8 +50,6 @@ class Agent:
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
-        return loss
-
     def discount_and_norm_rewards(self, rewards):
         # 计算折减奖励
         discount_rewards = []
@@ -62,7 +64,7 @@ class Agent:
 
 
 env = gym.make('CartPole-v0')
-agent = Agent(n_actions=env.action_space.n, n_features=env.observation_space.shape[0])
+agent = PG(n_actions=env.action_space.n, n_features=env.observation_space.shape[0])
 i_episode = 0
 
 while True:
@@ -82,8 +84,8 @@ while True:
         agent.store(observation, action, reward)
 
         if done:
-            loss = agent.train()
-            print("i_episode: {0} \t loss: {1} \t time_step: {2}".format(i_episode, loss.numpy(), time_step))
+            agent.train()
+            print("i_episode: {0} \t time_step: {2}".format(i_episode, time_step))
             break
 
         observation = observation_

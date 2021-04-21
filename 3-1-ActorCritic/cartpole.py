@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Actor-Critic algorithm of cartpole example
+# env: http://gym.openai.com/envs/CartPole-v1/
+
 import gym
 import numpy as np
 import tensorflow as tf

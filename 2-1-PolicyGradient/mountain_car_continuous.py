@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+# Continuous Policy Gradient algorithm of mountain car example
+# env: http://gym.openai.com/envs/MountainCarContinuous-v0/
+
 import gym
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 
-class Agent():
+class PG():
     def __init__(self, n_actions, n_features):
         self.n_actions = n_actions
         self.n_features = n_features
@@ -58,11 +62,10 @@ class Agent():
             loss = - tf.reduce_mean(log_probs * discounted_rewards)
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
-        return loss
 
 
 env = gym.make('MountainCarContinuous-v0')
-agent = Agent(n_actions=env.action_space.shape[0], n_features=env.observation_space.shape[0])
+agent = PG(n_actions=env.action_space.shape[0], n_features=env.observation_space.shape[0])
 
 i_episode = 0
 
@@ -83,8 +86,8 @@ while True:
         agent.store(observation, action, reward)
 
         if done:
-            loss = agent.train()
-            print("i_episode: {0} \t loss: {1} \t time_step: {2} \t max_episode_steps: {3}".format(i_episode, loss.numpy(), time_step, env.spec.max_episode_steps))
+            agent.train()
+            print("i_episode: {0} \t time_step: {2} \t max_episode_steps: {3}".format(i_episode, time_step, env.spec.max_episode_steps))
             break
         
         observation = observation_
