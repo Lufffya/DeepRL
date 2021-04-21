@@ -1,21 +1,13 @@
-import sys
-import os
+import sys, os
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Algorithms.ppo_continuous_tf2 import PPO
 from collections import deque
-from algorithms.ppo_continuous_tf2 import PPO
 import tensorflow as tf
 import numpy as np
 import gym
 import cv2
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-# config = tf.compat.v1.ConfigProto()
-# # config.gpu_options.per_process_gpu_memory_fraction = 1.0
-# config.gpu_options.allow_growth = True
-# tf.compat.v1.Session(config=config)
 
 ########## hyperparameters ##########
 GAMMA = 0.99
@@ -80,14 +72,12 @@ def update(ppo, states, actions, returns, advantages, old_log_prob):
 
 
 def train():
-    # from box2D.car_racing import CarRacing
-    # env = CarRacing()
     env = gym.make("CarRacing-v0")
     stacked_frames = deque(maxlen=4)
 
     ppo = PPO(ACTION_SIZE, EPSILON, ENTROPY_REG, VALUE_COEFFICIENT,"CNN", LEARNING_RATE, MAX_GRAD_NORM)
 
-    ppo.load_weights("model_weights\\carRacing_ppo\\ppo_checkpoint")
+    ppo.load_weights("weights\\CarRacing_PPO\\ppo_checkpoint")
 
     steps = 0
     total_reward = 0
@@ -142,8 +132,8 @@ def train():
         loss = update(ppo, np.array(states), np.array(actions), np.array(returns), np.array(advantages), np.array(old_log_pi))
 
         print("total_loss：{}   total_reward：{}".format(loss, total_reward))
-        if epoch != 0 and epoch % 10 == 0:
-            ppo.save_weights("model_weights\\carRacing_ppo\\ppo_checkpoint")
+        # if epoch != 0 and epoch % 10 == 0:
+        #     ppo.save_weights("weights\\CarRacing_PPO\\ppo_checkpoint")
 
     env.close()
 

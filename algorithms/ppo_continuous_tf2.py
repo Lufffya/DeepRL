@@ -2,14 +2,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-# config = tf.compat.v1.ConfigProto()
-# # config.gpu_options.per_process_gpu_memory_fraction = 1.0
-# config.gpu_options.allow_growth = True
-# tf.compat.v1.Session(config=config)
-
 
 class Actor(tf.keras.layers.Layer):
     def __init__(self, action_size, epsilon):
@@ -110,4 +102,4 @@ class PPO(tf.keras.models.Model):
         grads = tape.gradient(loss, self.trainable_weights)
         grads, _grad_norm = tf.clip_by_global_norm(grads, self.max_grad_norm)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
-        return pi_loss, value_loss, entropy_loss, loss,  old_neg_log_val, neg_log_val, approx_kl, ratio
+        return pi_loss, value_loss, entropy_loss, loss, old_neg_log_val, neg_log_val, approx_kl, ratio

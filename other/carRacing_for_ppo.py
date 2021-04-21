@@ -1,13 +1,12 @@
 import sys,os
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import cv2
 import numpy as np
 import tensorflow as tf
 from scipy.signal import lfilter
-from models.ppo import PPO
+from Algorithms.ppo_continuous_tf2 import PPO
 import gym
 from collections import deque
 

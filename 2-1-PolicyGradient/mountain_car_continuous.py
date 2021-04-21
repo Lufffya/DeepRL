@@ -2,21 +2,17 @@ import gym
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-np.random.seed(1)
 
 
 class Agent():
-    def __init__(self, n_actions, n_features, max_episode_steps):
+    def __init__(self, n_actions, n_features):
         self.n_actions = n_actions
         self.n_features = n_features
-        self.max_episode_steps = max_episode_steps
         self.gamma = 0.99
         self.episode_buffer = []
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
         self.model = self.build_continuous_policy_model()
-        self.model.load_weights("model_weights\\mountainCar_pg\\pg_checkpoint")
+        self.model.load_weights("Weights\\MountainCarContinuous_PG\\pg_checkpoint")
         self.log_std = tf.Variable(tf.zeros(n_actions, dtype=tf.float32))
 
     def build_continuous_policy_model(self):
@@ -62,24 +58,22 @@ class Agent():
             loss = - tf.reduce_mean(log_probs * discounted_rewards)
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
-
         return loss
 
+
 env = gym.make('MountainCarContinuous-v0')
-env.seed(1)
-agent = Agent(n_actions=env.action_space.shape[0],
-              n_features=env.observation_space.shape[0],
-              max_episode_steps=env.spec.max_episode_steps)
+agent = Agent(n_actions=env.action_space.shape[0], n_features=env.observation_space.shape[0])
 
 i_episode = 0
 
 while True:
+    time_step = 0
+    i_episode += 1
 
     observation = env.reset()
 
-    time_step = 0
-
     while True:
+        time_step += 1
         env.render()
 
         action = agent.choose_action(observation)
@@ -90,13 +84,10 @@ while True:
 
         if done:
             loss = agent.train()
-            print(loss.numpy())
+            print("i_episode: {0} \t loss: {1} \t time_step: {2} \t max_episode_steps: {3}".format(i_episode, loss.numpy(), time_step, env.spec.max_episode_steps))
             break
-
-        time_step += 1
+        
         observation = observation_
 
-    if i_episode != 0 and i_episode % 10 == 0:
-        agent.model.save_weights("model_weights\\mountainCar_pg\\pg_checkpoint")
-
-    i_episode += 1
+    # if i_episode != 0 and i_episode % 10 == 0:
+    #     agent.model.save_weights("Weights\\MountainCarContinuous_PG\\pg_checkpoint")

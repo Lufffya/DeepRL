@@ -1,19 +1,13 @@
 import gym
 import numpy as np
 import tensorflow as tf
-import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # 定义奖励的折减系数
 gamma = 0.99
 # 创建CartPole模拟环境
 cartPole = gym.make("CartPole-v0")
-# 设置环境的随机种子
-cartPole.seed(42)
-np.random.seed(42)
 # 最小的数字是1.0 + 每股收益!=1.0
 eps = np.finfo(np.float32).eps.item()
-
 # 定义优化器
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 # 定义损失函数
@@ -27,10 +21,6 @@ def action_critic():
     action = tf.keras.layers.Dense(2, activation="softmax")(common)
     critic = tf.keras.layers.Dense(1)(common)
     return tf.keras.models.Model(inputs=inputs, outputs=[action, critic])
-
-
-model = action_critic()
-model.summary()
 
 
 # 运行cartPole环境,模拟推车移动,从环境中获取决策数据
@@ -83,17 +73,22 @@ def compute_loss(action_probs, critic_values, returns):
         _diff = _return - _value
         actor_loss.append(-_log_probs * _diff)
 
-        critic_loss.append(huber_loss(tf.expand_dims(
-            _value, 0), tf.expand_dims(_return, 0)))
+        critic_loss.append(huber_loss(tf.expand_dims(_value, 0), tf.expand_dims(_return, 0)))
 
     return sum(actor_loss) + sum(critic_loss)
 
 
-pisodes = 1
+model = action_critic()
+model.summary()
+i_episode = 0
 running_reward = 0
+
 while True:
+    i_episode += 1
+
     # 初始化环境
     state = cartPole.reset()
+
     # 模型训练过程
     with tf.GradientTape() as tape:
         # 运行一个环境片段来收集训练数据
@@ -112,8 +107,8 @@ while True:
 
     running_reward = episode_reward * 0.01 + running_reward * 0.99
 
-    # print(f'episode {pisodes} --- episode_reward: {episode_reward} --- running_reward: {running_reward} --- loss {loss.numpy()}')
+    print(f'i_episode {i_episode} \t episode_reward: {episode_reward} \t running_reward: {running_reward} \t loss {loss.numpy()}')
 
     if running_reward > 195:
         break
-    pisodes += 1
+    

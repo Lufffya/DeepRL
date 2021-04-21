@@ -1,12 +1,10 @@
-import sys
-import os
+import sys, os
 # __file__获取执行文件相对路径，整行为取上一级的上一级目录
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Algorithms.ppo_continuous_torch import PPO, Memory
 import gym
 import torch
 import numpy as np
-from algorithms.ppo_continuous_torch import PPO, Memory
 
 
 ############## Hyperparameters ##############
@@ -39,8 +37,7 @@ if random_seed:
 
 memory = Memory()
 ppo = PPO(state_dim, action_dim, action_std, lr, betas, gamma, K_epochs, eps_clip)
-ppo.policy_old.load_state_dict(torch.load('weights\\pendulum\\pendulum.pth'))
-print(lr, betas)
+ppo.policy_old.load_state_dict(torch.load('Weights\\Pendulum\\pendulum.pth', map_location='cpu'))
 
 # logging variables
 
@@ -80,8 +77,8 @@ while True:
             break
 
     # save every 500 episodes
-    if i_episode % 500 == 0:
-        torch.save(ppo.policy.state_dict(), 'weights\\pendulum\\pendulum.pth')
+    # if i_episode % 500 == 0:
+    #     torch.save(ppo.policy.state_dict(), 'Weights\\Pendulum\\pendulum.pth')
 
     # logging
     if i_episode % log_interval == 0:

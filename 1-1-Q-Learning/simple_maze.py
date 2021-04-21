@@ -1,13 +1,7 @@
-"""
-强化学习 q-learning 简单例子
-https://morvanzhou.github.io/tutorials/
-"""
-
 import numpy as np
 import pandas as pd
 import time
 
-np.random.seed(2)   # 随机种子
 MAX_EPISODES = 13   # 游戏回合
 FRESH_TIME = 0.3    # 每步移动的时长
 ALPHA = 0.1         # 学习速率

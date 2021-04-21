@@ -1,9 +1,6 @@
 import gym
 import numpy as np
 import tensorflow as tf
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-np.random.seed(1)
 
 
 class Agent:
@@ -11,13 +8,14 @@ class Agent:
         self.n_actions = n_actions
         self.n_features = n_features
         self.gamma = 0.99
-        self.model = self.build_Policy_Model()
+        self.model = self.build_policy_model()
         self.optimizer = tf.keras.optimizers.Adam(lr=0.01)
         self.episode_buffer = []
 
-    def build_Policy_Model(self):
+    def build_policy_model(self):
         return tf.keras.models.Sequential([
-            tf.keras.layers.Dense(10, activation="relu"),
+            tf.keras.layers.Dense(16, activation="relu"),
+            tf.keras.layers.Dense(16, activation="relu"),
             tf.keras.layers.Dense(self.n_actions, activation="softmax")
         ])
 
@@ -35,20 +33,16 @@ class Agent:
             states.append(state)
             actions.append(action)
             rewards.append(reward)
-
         self.episode_buffer = []
         return np.array(states), np.array(actions), np.array(rewards)
 
     def train(self):
         states, actions, rewards = self.get_store()
         discounted_rewards = self.discount_and_norm_rewards(rewards)
-
         with tf.GradientTape() as tape:
             actions_prob = self.model(states)
-
             loss = tf.keras.losses.categorical_crossentropy(y_pred=actions_prob, y_true=tf.one_hot(actions, self.n_actions))
             loss = tf.reduce_mean(discounted_rewards * loss)
-
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
@@ -62,26 +56,23 @@ class Agent:
             discounted_sum = discounted_sum * self.gamma + reward
             discount_rewards.append(discounted_sum)
         discount_rewards = discount_rewards[::-1]
-
-        # # 标准化奖励
+        # 标准化奖励
         normalize_rewards = (discount_rewards - np.mean(discount_rewards)) / np.std(discount_rewards)
-
         return normalize_rewards
 
 
 env = gym.make('CartPole-v0')
-env.seed(1)
+agent = Agent(n_actions=env.action_space.n, n_features=env.observation_space.shape[0])
+i_episode = 0
 
-agent = Agent(n_actions=env.action_space.n,
-              n_features=env.observation_space.shape[0])
-
-for i_episode in range(3000):
+while True:
+    time_step = 0
+    i_episode += 1
 
     observation = env.reset()
 
-    time_step = 0
-
     while True:
+        time_step += 1
         env.render()
 
         action = agent.choose_action(observation)
@@ -92,8 +83,7 @@ for i_episode in range(3000):
 
         if done:
             loss = agent.train()
-            print(loss.numpy(), time_step)
+            print("i_episode: {0} \t loss: {1} \t time_step: {2}".format(i_episode, loss.numpy(), time_step))
             break
 
-        time_step += 1
         observation = observation_

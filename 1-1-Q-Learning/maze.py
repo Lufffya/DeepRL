@@ -1,11 +1,9 @@
 import gym
 import gym_maze
+import math
 import numpy as np
+import random
 
-
-lr = 0.2
-gamma = 0.99
-epsilon = 0.9
 ###### default ######
 # env_name = "maze-v0"
 ###### sample ######
@@ -25,6 +23,28 @@ env_name = "maze-random-20x20-plus-v0"
 
 env = gym.make(env_name)
 
+MIN_LEARNING_RATE = 0.2
+MIN_EPSILON_RATE = 0.001
+MAZE_SIZE = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int))
+DECAY_FACTOR = np.prod(MAZE_SIZE, dtype=float) / 10.0
+
+
+def get_learning_rate(t):
+    return max(MIN_LEARNING_RATE, min(0.8, 1.0 - math.log10((t+1)/DECAY_FACTOR)))
+
+
+def get_epsilon_rate(t):
+    return max(MIN_EPSILON_RATE, min(0.8, 1.0 - math.log10((t+1)/DECAY_FACTOR)))
+
+
+def select_action(state, explore_rate):
+    if random.random() < explore_rate:
+        action = env.action_space.sample()
+    else:
+        action = int(np.argmax(Q_Table[state]))
+    return action
+
+
 # actions
 # ["N", "S", "E", "W"]
 # ["北", "南", "东", "西"]
@@ -32,9 +52,12 @@ env = gym.make(env_name)
 
 Q_Table = np.zeros((20, 20, 4))
 
-# Q_Table = np.load(file="maze_model.npy")
+# Q_Table = np.load(file="Weights\maze_model.npy")
 
 i_episode = 0
+lr = get_learning_rate(0)
+epsilon = get_epsilon_rate(0)
+gamma = 0.99
 
 while True:
 
@@ -47,10 +70,12 @@ while True:
     while True:
         time_step += 1
 
-        if np.any(Q_Table[state]) == 0:
-            action = np.random.randint(0, 3)
-        else:
-            action = int(np.argmax(Q_Table[state]))
+        action = select_action(state, epsilon)
+
+        # if np.any(Q_Table[state]) == 0:
+        #     action = np.random.randint(0, 3)
+        # else:
+        #     action = int(np.argmax(Q_Table[state]))
 
         next_state, reward, done, _ = env.step(action)
         next_state = tuple(next_state)
@@ -65,4 +90,7 @@ while True:
             print("第 {} 次游戏, 在第 {} 步尝试后到达终点！".format(i_episode, time_step))
             break
     
-    # np.save(file="maze_model.npy", arr=Q_Table)
+    lr = get_learning_rate(i_episode)
+    epsilon = get_epsilon_rate(i_episode)
+
+    # np.save(file="Weights\maze_model.npy", arr=Q_Table)

@@ -1,9 +1,8 @@
 import gym
-import numpy as np
 import torch
 import torch.nn as nn
+import numpy as np
 from torch.distributions import MultivariateNormal
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -43,8 +42,7 @@ class ActorCritic(nn.Module):
             nn.Tanh(),
             nn.Linear(32, 1)
         )
-        self.action_var = torch.full(
-            (action_dim,), action_std*action_std).to(device)
+        self.action_var = torch.full((action_dim,), action_std*action_std).to(device)
 
     def forward(self):
         raise NotImplementedError
@@ -175,7 +173,8 @@ def main():
         np.random.seed(random_seed)
 
     memory = Memory()
-    ppo = PPO(state_dim, action_dim, action_std, lr, betas, gamma, K_epochs, eps_clip)
+    ppo = PPO(state_dim, action_dim, action_std,
+              lr, betas, gamma, K_epochs, eps_clip)
     print(lr, betas)
 
     # logging variables
@@ -212,19 +211,22 @@ def main():
         # stop training if avg_reward > solved_reward
         if running_reward > (log_interval*solved_reward):
             print("########## Solved! ##########")
-            torch.save(ppo.policy.state_dict(), './PPO_continuous_solved_{}.pth'.format(env_name))
+            torch.save(ppo.policy.state_dict(),
+                       './PPO_continuous_solved_{}.pth'.format(env_name))
             break
 
         # save every 500 episodes
         if i_episode % 500 == 0:
-            torch.save(ppo.policy.state_dict(), './PPO_continuous_{}.pth'.format(env_name))
+            torch.save(ppo.policy.state_dict(),
+                       './PPO_continuous_{}.pth'.format(env_name))
 
         # logging
         if i_episode % log_interval == 0:
             avg_length = int(avg_length/log_interval)
             running_reward = int((running_reward/log_interval))
 
-            print('Episode {} \t Avg length: {} \t Avg reward: {}'.format(i_episode, avg_length, running_reward))
+            print('Episode {} \t Avg length: {} \t Avg reward: {}'.format(
+                i_episode, avg_length, running_reward))
             running_reward = 0
             avg_length = 0
 
