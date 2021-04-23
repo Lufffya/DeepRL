@@ -12,13 +12,13 @@ class PG:
         self.n_actions = n_actions
         self.n_features = n_features
         self.gamma = 0.99
-        self.model = self.build_policy_model()
+        self.model = self.build_model()
         self.optimizer = tf.keras.optimizers.Adam(lr=0.01)
         self.episode_buffer = []
 
-    def build_policy_model(self):
+    def build_model(self):
         return tf.keras.models.Sequential([
-            tf.keras.layers.Dense(16, activation="relu"),
+            tf.keras.layers.Dense(16, activation="relu", input_shpe=(None, self.n_features)),
             tf.keras.layers.Dense(16, activation="relu"),
             tf.keras.layers.Dense(self.n_actions, activation="softmax")
         ])
@@ -63,7 +63,7 @@ class PG:
         return normalize_rewards
 
 
-env = gym.make('CartPole-v0')
+env = gym.make('CartPole-v1')
 agent = PG(n_actions=env.action_space.n, n_features=env.observation_space.shape[0])
 i_episode = 0
 

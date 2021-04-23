@@ -46,16 +46,22 @@ class DQN:
         self.buffer.append((state, action, reward, done, next_state))
         return len(self.buffer) >= self.batch_size
 
+    def sample(self):
+        states, actions, rewards, dones, next_states = zip(*random.sample(self.buffer, self.batch_size))
+        return np.array(states), np.array(actions), np.array(rewards), np.array(dones), np.array(next_states)
+
     def train(self):
-        sample_batch = random.sample(self.buffer, self.batch_size)
-        for state, action, reward, done, next_state in sample_batch:
-            with tf.GradientTape() as tape:
-                target = reward if done else reward + self.gamma * self.model(np.expand_dims(next_state, axis=0)).numpy().max()
-                y_true = self.model(np.expand_dims(state, axis=0)).numpy()
-                y_true[0][action] = target
-                loss = tf.keras.losses.mse(y_true,  self.model(np.expand_dims(state, axis=0)))
-            gradient = tape.gradient(loss, self.model.trainable_variables)
-            self.optimizer.apply_gradients(zip(gradient, self.model.trainable_variables))
+        states, actions, rewards, dones, next_states = self.sample()
+        with tf.GradientTape() as tape:
+            targets =  []
+            y_trues = self.model(states).numpy()
+            y_preds = self.model(next_states)
+            for reward, done, y_pred in zip(rewards, dones, y_preds):
+                targets.append(reward if done else reward + self.gamma * y_pred.numpy().max())
+            y_trues[range(len(actions)), actions] = np.array(targets)
+            loss = tf.keras.losses.mse(y_trues, y_preds)
+        gradient = tape.gradient(loss, self.model.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradient, self.model.trainable_variables))
 
 
 i_episode = 0

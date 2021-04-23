@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Deep Q Network algorithm of cartpole example
+# Double Deep Q Network algorithm of cartpole example
 # env: http://gym.openai.com/envs/CartPole-v1/
 
 import gym
@@ -24,13 +24,17 @@ class DQN:
         self.buffer = deque(maxlen=1000)
         self.optimizer = tf.keras.optimizers.Adam(self.lr)
         self.model = self.build_model()
+        self.target_model = self.build_model()
+        self.update_target_model()
 
     def build_model(self):
-        return tf.keras.Sequential([
+        model =  tf.keras.Sequential([
             tf.keras.layers.Dense(24, activation="relu", input_shape=(None, self.state_size)),
             tf.keras.layers.Dense(24, activation="relu"),
             tf.keras.layers.Dense(self.action_size, activation='linear'),
         ])
+        model.compile(optimizer=tf.keras.optimizers.Adam(lr=self.lr), loss="mse")
+        return model
 
     def choose_action(self, state):
         self.epsilon *= self.epsilon_decay
@@ -46,16 +50,25 @@ class DQN:
         self.buffer.append((state, action, reward, done, next_state))
         return len(self.buffer) >= self.batch_size
 
+    def sample(self):
+        states, actions, rewards, dones, next_states = zip(*random.sample(self.buffer, self.batch_size))
+        return np.array(states), np.array(actions), np.array(rewards), np.array(dones), np.array(next_states)
+
     def train(self):
-        sample_batch = random.sample(self.buffer, self.batch_size)
-        for state, action, reward, done, next_state in sample_batch:
-            with tf.GradientTape() as tape:
-                target = reward if done else reward + self.gamma * self.model(np.expand_dims(next_state, axis=0)).numpy().max()
-                y_true = self.model(np.expand_dims(state, axis=0)).numpy()
-                y_true[0][action] = target
-                loss = tf.keras.losses.mse(y_true,  self.model(np.expand_dims(state, axis=0)))
-            gradient = tape.gradient(loss, self.model.trainable_variables)
-            self.optimizer.apply_gradients(zip(gradient, self.model.trainable_variables))
+        states, actions, rewards, dones, next_states = self.sample()
+
+        targets =  []
+        y_trues = self.model.predict(states)
+        y_preds = self.target_model.predict(next_states)
+        for reward, done, y_pred in zip(rewards, dones, y_preds):
+            targets.append(reward if done else reward + self.gamma * y_pred.max())
+        y_trues[range(len(actions)), actions] = np.array(targets)
+
+        self.model.train_on_batch(states, y_trues)
+
+    def update_target_model(self):
+        # copy weights from model to target_model
+        self.target_model.set_weights(self.model.get_weights())
 
 
 i_episode = 0
@@ -85,6 +98,7 @@ while True:
         state = next_state
 
         if done:
+            agent.update_target_model()
             break
 
     print("i_episode：{} \t step_time：{}".format(i_episode, step_time))
