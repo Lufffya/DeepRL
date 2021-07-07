@@ -50,7 +50,9 @@ class PG():
         discount_rewards = np.power(self.gamma, np.arange(0, len(rewards), dtype=np.float32))
         for t in range(len(rewards)):
             discounted[t] = np.sum(rewards[t:] * discount_rewards[0: len(rewards)-t])
-        return discounted
+
+        normalize_rewards = (discounted - np.mean(discounted)) / np.std(discounted)
+        return normalize_rewards
 
     def train(self):
         states, actions, rewards = self.get_store()
@@ -87,9 +89,9 @@ while True:
 
         if done:
             agent.train()
-            print("i_episode: {0} \t time_step: {2} \t max_episode_steps: {3}".format(i_episode, time_step, env.spec.max_episode_steps))
+            print("i_episode: {0} \t time_step: {1} \t max_episode_steps: {2}".format(i_episode, time_step, env.spec.max_episode_steps))
             break
-        
+
         observation = observation_
 
     # if i_episode != 0 and i_episode % 10 == 0:

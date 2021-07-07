@@ -5,6 +5,7 @@
 import gym
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 
 class PG:
@@ -25,8 +26,9 @@ class PG:
 
     def choose_action(self, observation):
         actions_prob = self.model(np.expand_dims(observation, axis=0))
-        action = np.random.choice(self.n_actions, p=np.squeeze(actions_prob))
-        return action
+        categorical_distribution = tfp.distributions.Categorical(probs=actions_prob)
+        sampled_action = categorical_distribution.sample()
+        return np.squeeze(sampled_action, axis=0)
 
     def store(self, state, action, reward):
         self.episode_buffer.append((state, action, reward))
@@ -45,8 +47,9 @@ class PG:
         discounted_rewards = self.discount_and_norm_rewards(rewards)
         with tf.GradientTape() as tape:
             actions_prob = self.model(states)
-            loss = tf.keras.losses.categorical_crossentropy(y_pred=actions_prob, y_true=tf.one_hot(actions, self.n_actions))
-            loss = - tf.reduce_mean(discounted_rewards * loss)
+            categorical_distribution = tfp.distributions.Categorical(probs=actions_prob)
+            log_prob = categorical_distribution.log_prob(actions)
+            loss = - tf.reduce_mean(log_prob * discounted_rewards)
         grads = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
